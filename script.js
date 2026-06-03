@@ -165,6 +165,35 @@ function openModal(id) {
   document.body.style.overflow = 'hidden';
 }
 
+// ─── MODIFICAÇÃO: Painel Admin Protegido por Senha ───────────────────────────
+function openAdmin() {
+  // Você pode alterar a senha alterando o texto entre as aspas abaixo:
+  const SENHA_CORRETA = "admin123"; 
+  
+  const senhaDigitada = prompt("Digite a senha de administrador para acessar o painel:");
+  
+  if (senhaDigitada !== SENHA_CORRETA) {
+    alert("Senha incorreta ou acesso negado!");
+    return; // Cancela a abertura do painel
+  }
+
+  // Se a senha estiver correta, abre o painel normalmente
+  renderAdminList();
+  document.getElementById('adminPanel')?.classList.add('open');
+  document.getElementById('adminOverlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAdmin() {
+  document.getElementById('adminPanel')?.classList.remove('open');
+  document.getElementById('adminOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('adminTrigger')?.addEventListener('click', openAdmin);
+document.getElementById('closeAdmin')?.addEventListener('click', closeAdmin);
+document.getElementById('adminOverlay')?.addEventListener('click', closeAdmin);
+
 function closeModal() {
   document.getElementById('productModal')?.classList.remove('open');
   document.getElementById('modalOverlay')?.classList.remove('open');
@@ -184,24 +213,6 @@ document.getElementById('contactForm')?.addEventListener('submit', e => {
   }
   e.target.reset();
 });
-
-// ─── Painel Admin ─────────────────────────────────────────────────────────────
-function openAdmin() {
-  renderAdminList();
-  document.getElementById('adminPanel')?.classList.add('open');
-  document.getElementById('adminOverlay')?.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeAdmin() {
-  document.getElementById('adminPanel')?.classList.remove('open');
-  document.getElementById('adminOverlay')?.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.getElementById('adminTrigger')?.addEventListener('click', openAdmin);
-document.getElementById('closeAdmin')?.addEventListener('click', closeAdmin);
-document.getElementById('adminOverlay')?.addEventListener('click', closeAdmin);
 
 // MODIFICAÇÃO: Renderiza foto real da bolsa na lista administrativa se houver link
 function renderAdminList() {
