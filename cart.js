@@ -1,133 +1,81 @@
 /**
- * daEnê — Gerenciamento do Carrinho
+ * daEnê — Módulo do Carrinho (Cart)
+ * Gerencia a sacola de compras e a conexão com a API do WhatsApp.
  */
 
 const Cart = (() => {
-  const KEY = 'daene_cart';
-  const WA_NUMBER = '5571988378939'; // Seu número real adicionado!
+  const WA_NUMBER = '557192135975'; 
+  const STORAGE_KEY = 'daene_cart_items_v3';
 
   function getItems() {
-    return JSON.parse(localStorage.getItem(KEY) || '[]');
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   }
 
-  function save(items) {
-    localStorage.setItem(KEY, JSON.stringify(items));
-    render();
+  function saveItems(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     updateCount();
+    if (document.getElementById('cartDrawer')?.classList.contains('open')) {
+      renderDrawer();
+    }
   }
 
-  function add(productId, qty = 1) {
-    const items = getItems();
-    const existing = items.find(i => i.id === productId);
+  function add(productId) {
+    if (typeof DB === 'undefined') return;
     const product = DB.getProduct(productId);
-    if (!product) return;
+    if (!product || product.stock === 'esgotado') return;
+
+    const items = getItems();
+    const existing = items.find(item => item.id === productId);
 
     if (existing) {
-      existing.qty += qty;
+      existing.quantity += 1;
     } else {
-      items.push({ id: productId, qty });
+      items.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        emoji: product.emoji || '👜',
+        img: product.img || '',
+        quantity: 1
+      });
     }
-    save(items);
-    showCartFeedback();
+
+    saveItems(items);
+    
+    const btn = document.getElementById('cartBtn');
+    if (btn) {
+      btn.classList.remove('pulse');
+      void btn.offsetWidth; 
+      btn.classList.add('pulse');
+    }
+  }
+
+  function changeQty(productId, delta) {
+    let items = getItems();
+    const item = items.find(i => i.id === productId);
+    if (!item) return;
+
+    item.quantity += delta;
+    if (item.quantity <= 0) {
+      items = items.filter(i => i.id !== productId);
+    }
+    saveItems(items);
   }
 
   function remove(productId) {
-    save(getItems().filter(i => i.id !== productId));
-  }
-
-  function updateQty(productId, qty) {
-    const items = getItems();
-    const item = items.find(i => i.id === productId);
-    if (item) {
-      item.qty = Math.max(1, qty);
-      save(items);
-    }
-  }
-
-  function clear() {
-    localStorage.removeItem(KEY);
-    render();
-    updateCount();
-  }
-
-  function getTotal() {
-    return getItems().reduce((sum, item) => {
-      const p = DB.getProduct(item.id);
-      return sum + (p ? p.price * item.qty : 0);
-    }, 0);
+    const items = getItems().filter(i => i.id !== productId);
+    saveItems(items);
   }
 
   function updateCount() {
-    const total = getItems().reduce((sum, i) => sum + i.qty, 0);
-    const el = document.getElementById('cartCount');
-    if (el) {
-      el.textContent = total;
-      el.style.display = total > 0 ? 'flex' : 'none';
-    }
-  }
-
-  function render() {
-    const container = document.getElementById('cartItems');
-    const footer = document.getElementById('cartFooter');
-    const totalEl = document.getElementById('cartTotal');
-    if (!container) return;
-
-    const items = getItems();
-    if (items.length === 0) {
-      container.innerHTML = '<p class="cart-empty">Seu carrinho está vazio.</p>';
-      if (footer) footer.style.display = 'none';
-      return;
-    }
-
-    container.innerHTML = items.map(item => {
-      const p = DB.getProduct(item.id);
-      if (!p) return '';
-      return `
-        <div class="cart-item" data-id="${p.id}">
-          <div class="cart-item-icon">${p.emoji || '👜'}</div>
-          <div class="cart-item-info">
-            <strong>${p.name}</strong>
-            <span>${DB.formatPrice(p.price)}</span>
-          </div>
-          <div class="cart-item-qty">
-            <button class="qty-btn" onclick="Cart.updateQty('${p.id}', ${item.qty - 1})">−</button>
-            <span>${item.qty}</span>
-            <button class="qty-btn" onclick="Cart.updateQty('${p.id}', ${item.qty + 1})">+</button>
-          </div>
-          <button class="remove-btn" onclick="Cart.remove('${p.id}')" title="Remover">✕</button>
-        </div>
-      `;
-    }).join('');
-
-    if (footer) {
-      footer.style.display = 'flex';
-      totalEl.textContent = DB.formatPrice(getTotal());
-    }
-  }
-
-  function checkout() {
-    const items = getItems();
-    if (items.length === 0) return;
-
-    const lines = items.map(item => {
-      const p = DB.getProduct(item.id);
-      return `• ${item.qty}x ${p.name} — ${DB.formatPrice(p.price * item.qty)}`;
-    });
-    lines.push('');
-    lines.push(`*Total: ${DB.formatPrice(getTotal())}*`);
-
-    const msg = encodeURIComponent(
-      `Olá! Gostaria de encomendar os seguintes itens da daEnê:\n\n${lines.join('\n')}`
-    );
-
-    DB.saveOrder({ items: getItems(), total: getTotal() });
-    clear();
-    closeDrawer();
-    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+    const countEl = document.getElementById('cartCount');
+    if (!countEl) return;
+    const total = getItems().reduce((acc, curr) => acc + curr.quantity, 0);
+    countEl.textContent = total;
   }
 
   function openDrawer() {
-    render();
+    renderDrawer();
     document.getElementById('cartDrawer')?.classList.add('open');
     document.getElementById('cartOverlay')?.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -139,13 +87,74 @@ const Cart = (() => {
     document.body.style.overflow = '';
   }
 
-  function showCartFeedback() {
-    const btn = document.getElementById('cartBtn');
-    if (!btn) return;
-    btn.classList.add('pulse');
-    setTimeout(() => btn.classList.remove('pulse'), 600);
+  function renderDrawer() {
+    const container = document.getElementById('cartItems');
+    const totalEl = document.getElementById('cartTotal');
+    if (!container || !totalEl || typeof DB === 'undefined') return;
+
+    const items = getItems();
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="cart-empty">
+          <span>👜</span>
+          <p>Sua sacola está vazia</p>
+          <small>Adicione peças lindas do catálogo!</small>
+        </div>
+      `;
+      totalEl.textContent = DB.formatPrice(0);
+      return;
+    }
+
+    container.innerHTML = items.map(item => {
+      const iconContent = item.img 
+        ? `<img src="${item.img}" alt="${item.name}">` 
+        : item.emoji;
+
+      return `
+        <div class="cart-item">
+          <div class="cart-item-icon">${iconContent}</div>
+          <div class="cart-item-info">
+            <strong>${item.name}</strong>
+            <span>${DB.formatPrice(item.price)}</span>
+            <span class="remove-btn" onclick="Cart.remove('${item.id}')">Remover</span>
+          </div>
+          <div class="cart-item-qty">
+            <button class="qty-btn" onclick="Cart.changeQty('${item.id}', -1)">-</button>
+            <span>${item.quantity}</span>
+            <button class="qty-btn" onclick="Cart.changeQty('${item.id}', 1)">+</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const totalCost = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    totalEl.textContent = DB.formatPrice(totalCost);
   }
 
-  // REPARO: Expõe o WA_NUMBER para o script.js usar dinamicamente
-  return { WA_NUMBER, add, remove, updateQty, clear, getTotal, render, updateCount, checkout, openDrawer, closeDrawer };
+  function checkout() {
+    const items = getItems();
+    if (items.length === 0 || typeof DB === 'undefined') return;
+
+    let msg = `✨ *Novo Pedido — daEnê Costura Criativa* ✨\n\n`;
+    msg += `Olá, gostaria de encomendar as seguintes peças:\n`;
+    msg += `─────────────────────────\n`;
+
+    items.forEach(item => {
+      msg += `• *${item.quantity}x* ${item.name} — ${DB.formatPrice(item.price * item.quantity)}\n`;
+    });
+
+    const totalCost = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    msg += `─────────────────────────\n`;
+    msg += `*Total Estimado:* ${DB.formatPrice(totalCost)}\n\n`;
+    msg += `Por favor, verifique a disponibilidade das peças para mim. Obrigado! ❤️`;
+
+    localStorage.removeItem(STORAGE_KEY);
+    updateCount();
+    closeDrawer();
+
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  return { WA_NUMBER, add, changeQty, remove, updateCount, openDrawer, closeDrawer, checkout };
 })();
