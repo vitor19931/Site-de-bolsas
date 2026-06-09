@@ -1,126 +1,200 @@
 /**
  * daEnê — Banco de Dados (localStorage)
- * Gerencia produtos, pedidos e configurações da loja.
+ * Gerencia produtos atualizados, fotos salvas, pedidos e cache.
  */
 
 const DB = (() => {
   const KEYS = {
-    products: 'daene_products',
+    products: 'daene_products_v3', // Atualizado para v3 para limpar fotos antigas muito pesadas
     orders: 'daene_orders',
-    settings: 'daene_settings',
   };
 
-  // ─── Produtos padrão ──────────────────────────────────────────────────────
   const DEFAULT_PRODUCTS = [
     {
       id: 'p001',
-      name: 'Bolsa Tote Elegance',
-      price: 189.90,
-      category: 'totes',
-      emoji: '👜',
-      img: '',
-      short: 'Espaçosa, estruturada e perfeita para o trabalho ou passeios.',
-      description: 'A Tote Elegance combines praticidade e sofisticação. Com amplo espaço interno, bolso organizador com zíper, alças reforçadas e forro impermeável. Disponível em diversas cores sob encomenda.',
+      name: 'Mochila Pati',
+      price: 260.00,
+      category: 'mochilas',
+      emoji: '🎒',
+      img: '', 
+      short: 'Ergonômica, sofisticada e com espaço ideal para o dia a dia.',
+      description: 'A Mochila Pati une robustez à delicadeza da costura criativa autoral. Conta com forro estruturado, divisórias internas inteligentes e alças acolchoadas ajustáveis.',
       stock: 'disponivel',
-      featured: true,
-      createdAt: Date.now(),
+      featured: true
     },
     {
       id: 'p002',
-      name: 'Mochila Urbana Chic',
-      price: 229.90,
-      category: 'mochilas',
-      emoji: '🎒',
+      name: 'Pochete Afro',
+      price: 120.00,
+      category: 'pochetes',
+      emoji: '👝',
       img: '',
-      short: 'Conforto e sofisticação para o dia a dia urbano.',
-      description: 'Mochila com design moderno e feminino, alças acolchoadas reguláveis, compartimento acolchoado para notebook 13" e bolsos organizadores internos e externos. Feita sob encomenda.',
-      stock: 'encomenda',
-      featured: true,
-      createdAt: Date.now(),
+      short: 'Estampa cultural marcante, trazendo identidade ao visual.',
+      description: 'Celebrando a ancestralidade e praticidade. Feita em tecido premium com acabamento impecável, fecho reforçado e regulagem confortável de cintura ou transversal.',
+      stock: 'disponivel',
+      featured: true
     },
     {
       id: 'p003',
-      name: 'Clutch de Festa Glam',
-      price: 129.90,
-      category: 'clutches',
+      name: 'Pochete',
+      price: 110.00,
+      category: 'pochetes',
       emoji: '👝',
       img: '',
-      short: 'A peça certa para arrasar em eventos especiais.',
-      description: 'Clutch estruturada com detalhes dourados, fecho magnético, corrente removível e espelho interno. Perfeita para casamentos, formaturas e jantares especiais.',
+      short: 'Design clássico, minimalista e leve para saídas dinâmicas.',
+      description: 'Nossa pochete tradicional oferece a liberdade e segurança que você precisa, comportando perfeitamente smartphone, carteira e chaves com total estilo.',
       stock: 'disponivel',
-      featured: false,
-      createdAt: Date.now(),
+      featured: false
     },
     {
       id: 'p004',
-      name: 'Necessaire Organizadora',
-      price: 69.90,
-      category: 'necessaires',
-      emoji: '💼',
+      name: 'Kit Bolsa Praia',
+      price: 140.00,
+      category: 'praia',
+      emoji: '🏖️',
       img: '',
-      short: 'Indispensável para viagens — impermeável e compacta.',
-      description: 'Necessaire em tecido impermeável com divisórias internas, zíper duplo e alça de mão. Ideal para organizar cosméticos, remédios ou acessórios. Ótima opção de presente!',
-      stock: 'disponivel',
-      featured: false,
-      createdAt: Date.now(),
+      short: 'Conjunto coordenado indispensável para dias ensolarados.',
+      description: 'O kit definitivo para o verão. Materiais de altíssima durabilidade, resistentes à água e fáceis de higienizar. Estética descontraída e refinada.',
+      stock: 'encomenda',
+      featured: true
     },
     {
       id: 'p005',
-      name: 'Mini Bag Romântica',
-      price: 99.90,
-      category: 'minibags',
-      emoji: '🌸',
+      name: 'Shoulder Mini',
+      price: 130.00,
+      category: 'bolsas',
+      emoji: '👜',
       img: '',
-      short: 'Pequena, leve e cheia de charme para saídas rápidas.',
-      description: 'Mini Bag com corrente dourada, fechamento com zíper, forro de cetim e espaço para celular, carteira e batom. Cabe o essencial com muito estilo.',
+      short: 'Compacta por fora, surpreendente por dentro. Praticidade total.',
+      description: 'Perfeita para carregar apenas o essencial com máxima leveza. Alça transversal confortável e design geométrico atemporal.',
       stock: 'disponivel',
-      featured: true,
-      createdAt: Date.now(),
+      featured: false
     },
     {
       id: 'p006',
-      name: 'Bolsa Shoulder Boho',
-      price: 159.90,
-      category: 'totes',
-      emoji: '🌿',
+      name: 'Bolsa Praia em Tela',
+      price: 140.00,
+      category: 'praia',
+      emoji: '👜',
       img: '',
-      short: 'Estilo boho-chic com muito espaço e personalidade.',
-      description: 'Bolsa transversal com alça longa regulável, detalhes em macramê, bolso frontal com fecho magnético e forro estampado. Uma peça que conta histórias.',
-      stock: 'encomenda',
-      featured: false,
-      createdAt: Date.now(),
+      short: 'Moderna, arejada e projetada para não acumular areia.',
+      description: 'A Bolsa de Praia em Tela combina uma transparência sutil e elegante com a resistência necessária para os dias de veraneio.',
+      stock: 'disponivel',
+      featured: false
     },
     {
       id: 'p007',
-      name: 'Bolsa Bucket Luxo',
-      price: 179.90,
-      category: 'totes',
-      emoji: '🪣',
+      name: 'Mochila Rafa',
+      price: 210.00,
+      category: 'mochilas',
+      emoji: '🎒',
       img: '',
-      short: 'Formato bucket com fechamento de cordão e muito charme.',
-      description: 'Bolsa no estilo bucket bag com fechamento em cordão, alça transversal removível, bolso interno e base reforçada. Fabricada com sintético premium de alta qualidade.',
+      short: 'Visual contemporâneo, forrada e extremamente confortável.',
+      description: 'A Mochila Rafa equilibra versatilidade de uso com design autoral exclusivo. Excelente espaço interno protegido por fechamento seguro.',
       stock: 'disponivel',
-      featured: false,
-      createdAt: Date.now(),
+      featured: false
     },
     {
       id: 'p008',
-      name: 'Kit Viagem Completo',
-      price: 249.90,
-      category: 'necessaires',
-      emoji: '✈️',
+      name: 'Bolsa Fashion',
+      price: 140.00,
+      category: 'bolsas',
+      emoji: '👜',
       img: '',
-      short: 'Conjunto com 3 necessaires organizadoras de tamanhos variados.',
-      description: 'Kit com 3 necessaires (G, M, P) em tecido impermeável, fechamento com zíper de qualidade, alças resistentes e interior em cor clara para fácil localização dos itens. Presente ideal!',
-      stock: 'encomenda',
-      featured: true,
-      createdAt: Date.now(),
+      short: 'Uma peça conceitual que eleva qualquer look instantaneamente.',
+      description: 'Desenvolvida para quem ama se destacar. Costuras reforçadas, design geométrico exclusivo do ateliê e texturas sofisticadas.',
+      stock: 'disponivel',
+      featured: true
     },
+    {
+      id: 'p009',
+      name: 'Mochila Criativa',
+      price: 210.00,
+      category: 'mochilas',
+      emoji: '🎒',
+      img: '',
+      short: 'Combinações de cores exclusivas para expressar sua arte.',
+      description: 'Múltiplos bolsos funcionais e excelente compartimentação interna. Ideal para estudantes, profissionais e mentes criativas.',
+      stock: 'encomenda',
+      featured: false
+    },
+    {
+      id: 'p010',
+      name: 'Shoulder Bag Afro',
+      price: 140.00,
+      category: 'bolsas',
+      emoji: '👜',
+      img: '',
+      short: 'Bolsa de ombro transversal com detalhes de rica identidade.',
+      description: 'Carregue sua ancestralidade e estilo lado a lado. Uma peça versátil e de alta durabilidade com fecho magnético ou zíper premium.',
+      stock: 'disponivel',
+      featured: true
+    },
+    {
+      id: 'p011',
+      name: 'Shoulder',
+      price: 130.00,
+      category: 'bolsas',
+      emoji: '👜',
+      img: '',
+      short: 'O equilíbrio exato entre o casual e o elegante para o ombro.',
+      description: 'Nossa clássica Shoulder Bag adapta-se perfeitamente a compromissos diurnos ou noturnos com simplicidade refinada.',
+      stock: 'disponivel',
+      featured: false
+    },
+    {
+      id: 'p012',
+      name: 'Carteira',
+      price: 48.00,
+      category: 'acessorios',
+      emoji: '👛',
+      img: '',
+      short: 'Compacta e organizada para cartões, dinheiro e documentos.',
+      description: 'Feita sob medida para caber perfeitamente dentro de qualquer bolsa daEnê. Estrutura rígida e fechamento seguro por botão de pressão.',
+      stock: 'disponivel',
+      featured: false
+    },
+    {
+      id: 'p013',
+      name: 'Mochila',
+      price: 180.00,
+      category: 'mochilas',
+      emoji: '🎒',
+      img: '',
+      short: 'Design tradicional em costura criativa com estrutura reforçada.',
+      description: 'A peça perfeita para carregar cadernos, casacos e pertences pesados com a maciez das alças artesanais exclusivas.',
+      stock: 'disponivel',
+      featured: false
+    },
+    {
+      id: 'p014',
+      name: 'Bolsas',
+      price: 140.00,
+      category: 'bolsas',
+      emoji: '👜',
+      img: '',
+      short: 'Nossa criação clássica e coringa para todos os momentos.',
+      description: 'Feita com tecidos selecionados sob curadoria cuidadosa do ateliê. Conforto e atemporalidade garantidos.',
+      stock: 'disponivel',
+      featured: false
+    },
+    {
+      id: 'p015',
+      name: 'Pochete Tamanho M',
+      price: 80.00,
+      category: 'pochetes',
+      emoji: '👝',
+      img: '',
+      short: 'Espaço intermediário perfeito para quem busca conforto anatômico.',
+      description: 'Nem tão pequena, nem tão volumosa. Ajusta-se de forma ideal ao peito ou quadril para eventos, shows e caminhadas.',
+      stock: 'disponivel',
+      featured: false
+    }
   ];
 
-  // ─── Inicialização ────────────────────────────────────────────────────────
   function init() {
-    if (!localStorage.getItem(KEYS.products)) {
+    const saved = localStorage.getItem(KEYS.products);
+    if (!saved || JSON.parse(saved).length !== 15) {
       localStorage.setItem(KEYS.products, JSON.stringify(DEFAULT_PRODUCTS));
     }
     if (!localStorage.getItem(KEYS.orders)) {
@@ -128,7 +202,6 @@ const DB = (() => {
     }
   }
 
-  // ─── Produtos ─────────────────────────────────────────────────────────────
   function getProducts() {
     return JSON.parse(localStorage.getItem(KEYS.products) || '[]');
   }
@@ -144,10 +217,13 @@ const DB = (() => {
       products[existing] = { ...products[existing], ...data };
     } else {
       data.id = 'p' + Date.now();
-      data.createdAt = Date.now();
       products.unshift(data);
     }
-    localStorage.setItem(KEYS.products, JSON.stringify(products));
+    try {
+      localStorage.setItem(KEYS.products, JSON.stringify(products));
+    } catch (e) {
+      alert("⚠️ Erro de espaço: O navegador bloqueou o salvamento. Verifique se o tamanho ou zoom das fotos anteriores está muito grande e tente reduzi-lo.");
+    }
     return data;
   }
 
@@ -161,26 +237,11 @@ const DB = (() => {
     return cat === 'todas' ? all : all.filter(p => p.category === cat);
   }
 
-  // ─── Pedidos ──────────────────────────────────────────────────────────────
-  function getOrders() {
-    return JSON.parse(localStorage.getItem(KEYS.orders) || '[]');
-  }
-
-  function saveOrder(order) {
-    const orders = getOrders();
-    order.id = 'ord' + Date.now();
-    order.createdAt = new Date().toISOString();
-    orders.unshift(order);
-    localStorage.setItem(KEYS.orders, JSON.stringify(orders));
-    return order;
-  }
-
-  // ─── Utilidades ───────────────────────────────────────────────────────────
   function formatPrice(value) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   }
 
-  return { init, getProducts, getProduct, saveProduct, deleteProduct, getByCategory, getOrders, saveOrder, formatPrice };
+  return { init, getProducts, getProduct, saveProduct, deleteProduct, getByCategory, formatPrice };
 })();
 
 DB.init();
