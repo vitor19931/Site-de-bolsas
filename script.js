@@ -4,9 +4,8 @@
 
 const WHATSAPP_NUMBER = typeof Cart !== 'undefined' && Cart.WA_NUMBER ? Cart.WA_NUMBER : '557192135975'; 
 let loadedImageBase64 = ""; 
-let currentImageObject = null; // Guarda o objeto da imagem carregada para edição ao vivo
+let currentImageObject = null; 
 
-// Atualização de data do copyright
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
@@ -14,7 +13,6 @@ if (typeof Cart !== 'undefined') {
   Cart.updateCount();
 }
 
-// Menu Mobile Transicional
 const menuToggle = document.getElementById('menuToggle');
 const mainNav = document.getElementById('mainNav');
 
@@ -30,7 +28,6 @@ mainNav?.querySelectorAll('a').forEach(a => {
   });
 });
 
-// Sincronização de Menu de Rolagem (Scroll Spy)
 const navLinks = document.querySelectorAll('.main-nav a');
 const sectionObs = new IntersectionObserver(entries => {
   entries.forEach(e => {
@@ -43,7 +40,6 @@ const sectionObs = new IntersectionObserver(entries => {
 
 document.querySelectorAll('section[id]').forEach(s => sectionObs.observe(s));
 
-// Animações Fluídas de Reveal no Scroll
 const revObs = new IntersectionObserver((entries, obs) => {
   entries.forEach(e => { 
     if (e.isIntersecting) { 
@@ -55,13 +51,11 @@ const revObs = new IntersectionObserver((entries, obs) => {
 
 document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
 
-// Ouvintes do Carrinho Gaveta
 document.getElementById('cartBtn')?.addEventListener('click', () => Cart?.openDrawer());
 document.getElementById('cartOverlay')?.addEventListener('click', () => Cart?.closeDrawer());
 document.getElementById('closeCart')?.addEventListener('click', () => Cart?.closeDrawer());
 document.getElementById('checkoutBtn')?.addEventListener('click', () => Cart?.checkout());
 
-// Renderizador da Vitrine com Filtragem Dinâmica
 let currentCat = 'todas';
 
 function renderProducts(cat = 'todas') {
@@ -111,7 +105,6 @@ function renderProducts(cat = 'todas') {
   }).join('');
 }
 
-// Filtros
 document.getElementById('filters')?.addEventListener('click', e => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
@@ -122,7 +115,6 @@ document.getElementById('filters')?.addEventListener('click', e => {
 
 renderProducts();
 
-// Modal Detalhes da Peça
 function openModal(id) {
   if (typeof DB === 'undefined') return;
   const p = DB.getProduct(id);
@@ -173,7 +165,6 @@ function closeModal() {
 document.getElementById('closeModal')?.addEventListener('click', closeModal);
 document.getElementById('modalOverlay')?.addEventListener('click', closeModal);
 
-// Painel Admin Protegido por Chave de Acesso
 function openAdmin() {
   const SENHA_CORRETA = "Daene1234"; 
   const senhaDigitada = prompt("Digite a credencial de segurança administrativa:");
@@ -199,7 +190,6 @@ document.getElementById('adminTrigger')?.addEventListener('click', openAdmin);
 document.getElementById('closeAdmin')?.addEventListener('click', closeAdmin);
 document.getElementById('adminOverlay')?.addEventListener('click', closeAdmin);
 
-// Mecanismo Avançado de Ajuste da Imagem (Zoom e Movimento por Canvas)
 document.getElementById('pImgFile')?.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -209,12 +199,10 @@ document.getElementById('pImgFile')?.addEventListener('change', function(e) {
     currentImageObject = new Image();
     currentImageObject.src = event.target.result;
     currentImageObject.onload = function() {
-      // Reseta os valores dos controles deslizantes
       document.getElementById('sliderZoom').value = 1;
       document.getElementById('sliderX').value = 0;
       document.getElementById('sliderY').value = 0;
       
-      // Define limites dinâmicos para mover com base no tamanho da imagem carregada
       const maxRange = Math.max(currentImageObject.width, currentImageObject.height);
       document.getElementById('sliderX').min = -maxRange;
       document.getElementById('sliderX').max = maxRange;
@@ -227,7 +215,6 @@ document.getElementById('pImgFile')?.addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// Atualiza a renderização do corte em tempo real conforme mexe nos sliders
 function updateCropCanvas() {
   if (!currentImageObject) return;
 
@@ -239,31 +226,26 @@ function updateCropCanvas() {
   const panX = parseFloat(document.getElementById('sliderX').value);
   const panY = parseFloat(document.getElementById('sliderY').value);
 
-  // Limpa o canvas de visualização
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Encontra a escala ideal para cobrir o quadrado de 400x400
   const baseScale = Math.max(canvas.width / currentImageObject.width, canvas.height / currentImageObject.height);
   const finalScale = baseScale * zoom;
 
   const widthRenderizada = currentImageObject.width * finalScale;
   const heightRenderizada = currentImageObject.height * finalScale;
 
-  // Centraliza e aplica o deslocamento manual (panX e panY)
   const posX = (canvas.width - widthRenderizada) / 2 + panX;
   const posY = (canvas.height - heightRenderizada) / 2 + panY;
 
   ctx.drawImage(currentImageObject, posX, posY, widthRenderizada, heightRenderizada);
 
-  // Salva no estado base64 otimizado (Qualidade de 65% para garantir espaço no localStorage)
   loadedImageBase64 = canvas.toDataURL('image/jpeg', 0.65);
 
   const box = document.getElementById('adminPreviewBox');
   if (box) box.style.display = 'flex';
 }
 
-// Vincula o evento de arrastar nos sliders para atualizar a foto instantaneamente
 ['sliderZoom', 'sliderX', 'sliderY'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', updateCropCanvas);
 });
@@ -277,7 +259,6 @@ document.getElementById('removePreviewBtn')?.addEventListener('click', () => {
   if(box) box.style.display = 'none';
 });
 
-// CRUD do Admin
 function renderAdminList() {
   const container = document.getElementById('adminProductList');
   if (!container || typeof DB === 'undefined') return;
@@ -385,8 +366,24 @@ document.getElementById('adminForm')?.addEventListener('submit', e => {
   renderProducts(currentCat);
 });
 
+// ─── Envio do Formulário de Contato para o WhatsApp ───
 document.getElementById('contactForm')?.addEventListener('submit', e => {
   e.preventDefault();
+
+  // Pega os valores digitados
+  const nome = document.getElementById('cName').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  const telefone = document.getElementById('cPhone').value.trim();
+  const mensagem = document.getElementById('cMsg').value.trim();
+
+  // Monta o texto bonitinho pro WhatsApp
+  const textoWhatsApp = `Olá, daEnê! Vim pelo site e tenho uma dúvida/encomenda.\n\n*Nome:* ${nome}\n*E-mail:* ${email}\n*WhatsApp:* ${telefone}\n\n*Mensagem:*\n${mensagem}`;
+
+  // Abre o WhatsApp numa nova aba
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(textoWhatsApp)}`;
+  window.open(url, '_blank');
+
+  // Mostra a mensagem de sucesso no site e limpa os campos
   const successEl = document.getElementById('formSuccess');
   if (successEl) {
     successEl.style.display = 'block';
